@@ -505,3 +505,37 @@ class NonAggregateAnnotationTestCase(TestCase):
             self.assertIs(book.is_book, True)
             self.assertIs(book.is_pony, False)
             self.assertIsNone(book.is_none)
+
+    def test_alias_sql_injection(self):
+        crafted_alias = """injected_name" from "annotations_book"; --"""
+        msg = (
+            "Column aliases cannot contain whitespace characters, quotation marks, "
+            "semicolons, or SQL comments."
+        )
+        with self.assertRaisesMessage(ValueError, msg):
+            Book.objects.annotate(**{crafted_alias: Value(1)})
+
+    def test_alias_forbidden_chars(self):
+        tests = [
+            'al"ias',
+            "a'lias",
+            "ali`as",
+            "alia s",
+            "alias\t",
+            "ali\nas",
+            "alias--",
+            "ali/*as",
+            "alias*/",
+            "alias;",
+            # [] are used by MSSQL.
+            "alias[",
+            "alias]",
+        ]
+        msg = (
+            "Column aliases cannot contain whitespace characters, quotation marks, "
+            "semicolons, or SQL comments."
+        )
+        for crafted_alias in tests:
+            with self.subTest(crafted_alias):
+                with self.assertRaisesMessage(ValueError, msg):
+                    Book.objects.annotate(**{crafted_alias: Value(1)})

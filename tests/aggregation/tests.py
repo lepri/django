@@ -1188,3 +1188,12 @@ class AggregateTestCase(TestCase):
         ).filter(rating_or_num_awards__gt=F('num_awards')).order_by('num_awards')
         self.assertQuerysetEqual(
             qs2, [1, 3], lambda v: v.num_awards)
+
+    def test_alias_sql_injection(self):
+        crafted_alias = """injected_name" from "aggregation_author"; --"""
+        msg = (
+            "Column aliases cannot contain whitespace characters, quotation marks, "
+            "semicolons, or SQL comments."
+        )
+        with self.assertRaisesMessage(ValueError, msg):
+            Author.objects.aggregate(**{crafted_alias: Avg("age")})
