@@ -10,6 +10,7 @@ from django.utils import six, timezone
 from django.utils.dateparse import parse_duration
 from django.utils.deprecation import RemovedInDjango20Warning
 from django.utils.encoding import force_text
+from django.core.validators import _lazy_re_compile
 
 
 class BaseDatabaseOperations(object):
@@ -34,6 +35,8 @@ class BaseDatabaseOperations(object):
         'intersection': 'INTERSECT',
         'difference': 'EXCEPT',
     }
+
+    extract_trunc_lookup_pattern = _lazy_re_compile(r"[\w\-_()]+")
 
     def __init__(self, connection):
         self.connection = connection
